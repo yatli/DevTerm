@@ -88,10 +88,10 @@ void keys_task(DEVTERM*dv){
 
         keys_prev ^= _mask;
       }
-  
     }
   }
   
+  dv->state->joystickMouseTask();
 }
 void keys_init(DEVTERM*dv){
 
