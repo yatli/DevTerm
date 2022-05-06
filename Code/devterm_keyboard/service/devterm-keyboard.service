@@ -1,0 +1,12 @@
+[Unit]
+Description=devterm keyboard service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/bin/devterm_keyboard.py
+Restart=always
+Environment="DISPLAY=:0"
+
+
+[Install]
+WantedBy=multi-user.target
