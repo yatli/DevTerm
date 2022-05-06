@@ -10,4 +10,5 @@ by stm32duino version 2021.2.22
   gd32f1_generic_boot20_pc13.bin
   generic_boot20_pc13.bin
   
-  
+Windows driver: https://github.com/rogerclarkmelbourne/Arduino_STM32/tree/master/drivers/win
+Run `install.bat` with admin priviledge.
