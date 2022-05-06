@@ -21,6 +21,10 @@ const uint8_t reportDescription[] = {
 static const uint32_t LOOP_INTERVAL_MS = 0;
 static TickWaiter<LOOP_INTERVAL_MS> waiter;
 
+uint8_t check_pd2(){ // if swtich 2 in back is set to on(HIGH)
+  return digitalRead(PD2);
+}
+
 void setup() {
   USBComposite.setManufacturerString("ClockworkPI");
   USBComposite.setProductString("DevTerm");
@@ -33,7 +37,7 @@ void setup() {
 
   dev_term.Keyboard->setAdjustForHostCapsLock(false);
 
-  dev_term.state = new State();
+  dev_term.state = new State(&dev_term);
 
   dev_term.Keyboard_state.layer = 0;
   dev_term.Keyboard_state.prev_layer = 0;
@@ -54,6 +58,10 @@ void setup() {
   dev_term._Serial->println("setup done");
 
   pinMode(PD2,INPUT);// switch 2 in back 
+  if (check_pd2() == HIGH) {
+    // backward compat
+    dev_term.state->setJoystickMode(JoystickMode::Keyboard);
+  }
   
   delay(1000);
 }
