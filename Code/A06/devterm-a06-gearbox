@@ -33,10 +33,13 @@ def gears() -> list[dict[str, Any]]:
         gear(big=(1008000,) * 2, gpu_freq=400000000, use="playing videos and 3D games"),
         gear(big=(1200000,) * 2, gpu_freq=400000000, use="performance-first tasks"),
         gear(
-            little=(1416000,) * 4,
+            # little=(1416000,) * 4,
+            little=(100800,) * 4,
             big=(1800000,) * 2,
             gpu_freq=800000000,
             use="max performance, max power (usage)",
+            cpu0_trip_point=77000,
+            cpu4_trip_point=77000,
         ),
     ]
 
@@ -47,6 +50,9 @@ def gear(
     gpu_freq=200000000,
     gpu_gov=GPU_GOV_SIMPLE,
     use="",
+    cpu0_trip_point=70000,
+    cpu4_trip_point=75000,
+    gpu_trip_point=75000,
 ) -> dict[str, Any]:
     """Helper to convert the concise gear format above into a full description.
 
@@ -73,6 +79,9 @@ def gear(
         "gpu_freq": gpu_freq,
         "gpu_gov": gpu_gov,
         "use": use,
+        "cpu0_trip_point": cpu0_trip_point,
+        "cpu4_trip_point": cpu4_trip_point,
+        "gpu_trip_point": gpu_trip_point,
     }
 
 
@@ -186,6 +195,18 @@ class A06:
         except Exception:
             print("set cpu %d max freq failed" % cpu_num)
 
+    def set_thermalzone_trip_point(self, zone, trip_point, temp):
+        trip_point_file = "/sys/class/thermal/thermal_zone%d/trip_point_%d_temp" % (zone, trip_point)
+        try:
+            subprocess.run(
+                "echo %d | sudo tee  %s" % (temp, trip_point_file),
+                shell=True,
+                stdout=subprocess.DEVNULL,
+            )
+        except Exception:
+            print("set thermalzone %d trip point %d failed" % (zone, trip_point))
+
+
     def get_gpu_freq(self):
         gpu_sys_path = "/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu"
         gpu_freq_path = os.path.join(gpu_sys_path, "max_freq")
@@ -251,6 +272,9 @@ class A06:
                     self.set_cpu_max_freq(cpu, freq)
 
         self.set_gpu(self.gear["gpu_gov"], self.gear["gpu_freq"])
+        self.set_thermalzone_trip_point(0, 0, self.gear[ "cpu0_trip_point" ])
+        self.set_thermalzone_trip_point(0, 1, self.gear[ "cpu4_trip_point" ])
+        self.set_thermalzone_trip_point(1, 0, self.gear[ "gpu_trip_point" ])
 
         # TODO: Generalise this
         if self.gear["cpu"][0] > 0:
