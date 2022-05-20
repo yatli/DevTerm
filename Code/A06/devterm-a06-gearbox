@@ -36,7 +36,7 @@ def gears() -> list[dict[str, Any]]:
             # little=(1416000,) * 4,
             little=(100800,) * 4,
             big=(1800000,) * 2,
-            gpu_freq=800000000,
+            gpu_freq=600000000,
             use="max performance, max power (usage)",
             cpu0_trip_point=77000,
             cpu4_trip_point=77000,
@@ -109,7 +109,7 @@ class A06:
     """A06 Module class."""
 
     cpus = []
-    cpu_scaling_governor: str = "schedutil"
+    cpu_scaling_governor: str = "ondemand"
     gear = load_gear(1)  # 1-5
     null_out: str = "2>/dev/null"
 

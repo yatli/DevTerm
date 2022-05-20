@@ -5,7 +5,7 @@ Description=devterm keyboard service
 Type=simple
 ExecStart=/usr/bin/python3 /usr/local/bin/devterm_keyboard.py
 Restart=always
-Environment="DISPLAY=:0"
+Environment="DISPLAY=:0.0" "DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
 
 
 [Install]
