@@ -14,7 +14,7 @@ State::State(DEVTERM* dt)
     joystickMode(JoystickMode::Joystick),
     selectorMode(SelectorMode::Joystick),
     currentGear(2), // gear 3
-    jm_scroll_tick(0)
+    jm_tick(0)
 {
   std::fill(js_keys, js_keys + JS_KEY_MAX, false);
 }
@@ -139,8 +139,14 @@ void State::joystickMouseFeed(JOYSTICK_KEY key, int8_t mode) {
   }
 }
 
+bool State::joystickDpadActive() {
+  return js_keys[JS_KEY_UP] || js_keys[JS_KEY_DOWN] || js_keys[JS_KEY_LEFT] || js_keys[JS_KEY_RIGHT];
+}
+
 void State::joystickJoyFeed(JOYSTICK_KEY key, int8_t mode) {
+  bool was_active = joystickDpadActive();
   js_keys[key] = mode;
+  bool is_active = joystickDpadActive();
   switch (key)
   {
   case JS_KEY_UP:
@@ -172,74 +178,68 @@ void State::joystickJoyFeed(JOYSTICK_KEY key, int8_t mode) {
     }
     break;
   }
-  if (key == JS_KEY_B || key == JS_KEY_SEL) {
-    if (mode == KEY_PRESSED) {
-      dv->Mouse->press(MOUSE_LEFT);
-    } else {
-      dv->Mouse->release(MOUSE_LEFT);
-    }
-  } else if (key == JS_KEY_A || key == JS_KEY_STA) {
-    if (mode == KEY_PRESSED) {
-      dv->Mouse->press(MOUSE_RIGHT);
-    } else {
-      dv->Mouse->release(MOUSE_RIGHT);
-    }
-  } else if (key == JS_KEY_X) {
-    if (mode == KEY_PRESSED) {
-      pressMiddleClick();
-    } else {
-      if (!scrolled) {
-        dv->Mouse->click(MOUSE_MIDDLE);
-      }
-      releaseMiddleClick();
-    }
+  if (was_active ^ is_active) {
+    jm_tick = 0;
   }
 }
 
-void State::joystickMouseTask() {
+static const int SCROLL_SLOW_TICKS = 40;
+static const int SCROLL_FAST_TICKS = 10;
+static const int SCROLL_SLOW_CNT = 1;
+static const int SCROLL_FAST_CNT = 1;
+static const int MOVE_FAST = 8;
+static const int MOVE_SLOW = 2;
+
+bool State::joystickMouseTask() {
   if (joystickMode != JoystickMode::Mouse) {
-    return;
+    return false;
   }
   bool slow = js_keys[JS_KEY_Y];
   int8_t x = 0;
   int8_t y = 0;
   int8_t w = 0;
-  int8_t spd = slow ? 2 : 8;
+  int8_t spd = 0; 
+  int8_t ticks = 0;
+  const auto mode = moveTrackball();
 
-  if (js_keys[JS_KEY_LEFT]) {
-    x -= spd;
-  }
-  if (js_keys[JS_KEY_RIGHT]) {
-    x += spd;
-  }
-  if (js_keys[JS_KEY_UP]) {
-    y -= spd;
-  }
-  if (js_keys[JS_KEY_DOWN]) {
-    y += spd;
-  }
+  if (mode == TrackballMode::Mouse) {
+    spd = slow ? MOVE_SLOW : MOVE_FAST;
+    ticks = 0;
 
-  if (x != 0 || y != 0) {
-    const auto mode = moveTrackball();
-    if (mode == TrackballMode::Wheel) {
-      x = 0;
-      w = y;
-      y = 0;
+    if (js_keys[JS_KEY_LEFT]) {
+      x -= spd;
     }
-  }
-
-  if (w != 0) {
+    if (js_keys[JS_KEY_RIGHT]) {
+      x += spd;
+    }
+    if (js_keys[JS_KEY_UP]) {
+      y -= spd;
+    }
+    if (js_keys[JS_KEY_DOWN]) {
+      y += spd;
+    }
+  } else {
+    spd = slow ? SCROLL_SLOW_CNT : SCROLL_FAST_CNT;
+    ticks = slow ? SCROLL_SLOW_TICKS : SCROLL_FAST_TICKS;
+    if (js_keys[JS_KEY_UP]) {
+      w -= spd;
+    }
+    if (js_keys[JS_KEY_DOWN]) {
+      w += spd;
+    }
     bool s = getScrolled();
     setScrolled();
-    if (++jm_scroll_tick < 50 && s) {
+    if (++jm_tick < ticks && s) {
       w = 0;
     } else {
-      jm_scroll_tick = 0;
+      jm_tick = 0;
     }
   }
 
-  if(x !=0 || y != 0 || -w!=0) {
+  if(x !=0 || y != 0 || w!=0) {
     dv->Mouse->move(x, y, -w);
+    return true;
+  } else {
+    return false;
   }
- 
 }

@@ -163,12 +163,13 @@ void matrix_release(DEVTERM*dv,uint8_t row,uint8_t col) {
   
 }
 
-void keyboard_task(DEVTERM*dv)
+bool keyboard_task(DEVTERM*dv)
 {
 
   uint8_t matrix_row = 0;
   uint8_t matrix_change = 0;
   uint8_t pressed = 0;
+  bool any_change = false;
   
   matrix_scan();
   
@@ -176,6 +177,7 @@ void keyboard_task(DEVTERM*dv)
     matrix_row = matrix_get_row(r);
     matrix_change = matrix_row ^ matrix_prev[r];
     if (matrix_change) { 
+      any_change = true;
       uint8_t col_mask = 1;
       for (uint8_t c = 0; c < MATRIX_COLS; c++, col_mask <<= 1) {
         if (matrix_change & col_mask) {
@@ -191,8 +193,7 @@ void keyboard_task(DEVTERM*dv)
       }
     }
   }
-
-
+  return any_change;
 }
 
 void keyboard_init(DEVTERM*){

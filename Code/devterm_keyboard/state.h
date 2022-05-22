@@ -65,7 +65,8 @@ class State
     void fnJoystick(int8_t x, int8_t y);
     void joystickMouseFeed(JOYSTICK_KEY key, int8_t mode);
     void joystickJoyFeed(JOYSTICK_KEY key, int8_t mode);
-    void joystickMouseTask();
+    bool joystickMouseTask();
+    bool joystickDpadActive();
   private:
     bool middleClick;
     bool scrolled;
@@ -75,7 +76,7 @@ class State
     SelectorMode selectorMode;
     JoystickMode joystickMode;
     bool js_keys[JS_KEY_MAX];
-    int jm_scroll_tick;
+    int jm_tick;
 };
 
 #endif

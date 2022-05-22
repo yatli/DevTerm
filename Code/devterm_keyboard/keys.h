@@ -19,7 +19,7 @@
 #define KEYS_NUM 17
 
 
-void keys_task(DEVTERM*);
+bool keys_task(DEVTERM*);
 void keys_init(DEVTERM*);
 
 

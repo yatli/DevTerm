@@ -65,13 +65,14 @@ void print_keys(DEVTERM*dv) {
   
 }
 
-void keys_task(DEVTERM*dv){
+bool keys_task(DEVTERM*dv){
   
   scan_keys();
 
   uint32_t _mask =1;
   uint32_t _change = 0;
   uint32_t _pressed = 0;
+  bool mouse_active = false;
   
   _change = keys ^ keys_prev;
 
@@ -91,7 +92,8 @@ void keys_task(DEVTERM*dv){
     }
   }
   
-  dv->state->joystickMouseTask();
+  mouse_active = dv->state->joystickMouseTask();
+  return mouse_active || _change;
 }
 void keys_init(DEVTERM*dv){
 

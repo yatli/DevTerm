@@ -19,7 +19,7 @@
 
 
 void trackball_init(DEVTERM*);
-void trackball_task(DEVTERM*);
+bool trackball_task(DEVTERM*);
 
 
 #endif

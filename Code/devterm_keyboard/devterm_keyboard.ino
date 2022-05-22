@@ -69,11 +69,10 @@ void setup() {
 void loop() {
   dev_term.delta = waiter.waitForNextTick();
   dev_term.state->tick(dev_term.delta);
-  
-  trackball_task(&dev_term);
-  
-  keys_task(&dev_term); //keys above keyboard
-  keyboard_task(&dev_term);
-  
 
+  bool active = false;
+  
+  active = active || trackball_task(&dev_term);
+  active = active || keys_task(&dev_term); //keys above keyboard
+  active = active || keyboard_task(&dev_term);
 }

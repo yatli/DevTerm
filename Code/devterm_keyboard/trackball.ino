@@ -64,7 +64,7 @@ static void interrupt( ) {
  
 }
  
-void trackball_task(DEVTERM*dv) {
+bool trackball_task(DEVTERM*dv) {
   int8_t x = 0, y = 0, w = 0;
   noInterrupts();
   const auto mode = dv->state->moveTrackball();
@@ -110,8 +110,10 @@ void trackball_task(DEVTERM*dv) {
 
   if(x !=0 || y != 0 || -w!=0) {
     dv->Mouse->move(x, y, -w);
+    return true;
+  } else {
+    return false;
   }
- 
 }
 
 
