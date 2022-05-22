@@ -5,6 +5,7 @@
 #include "tickwaiter.h"
 
 #include <USBComposite.h>
+#include "low_power.h"
 
 #define SER_NUM_STR "20210531"
 
@@ -26,10 +27,11 @@ uint8_t check_pd2(){ // if swtich 2 in back is set to on(HIGH)
 }
 
 void setup() {
+
   USBComposite.setManufacturerString("ClockworkPI");
   USBComposite.setProductString("DevTerm");
   USBComposite.setSerialString(SER_NUM_STR);
-  
+
   dev_term.Keyboard = new HIDKeyboard(HID);
   dev_term.Joystick = new HIDJoystick(HID);
   dev_term.Mouse    = new HIDMouse(HID);
@@ -64,7 +66,12 @@ void setup() {
   }
   
   delay(1000);
+  // note, don't initialize low-power mode before delay(1000) -- it is that one gives you a chance to re-program the device
+  low_power_init(&dev_term);
 }
+
+int inactive_cnt = 0;
+int sleep_cnt = 0;
 
 void loop() {
   dev_term.delta = waiter.waitForNextTick();
@@ -75,4 +82,8 @@ void loop() {
   active = active || trackball_task(&dev_term);
   active = active || keys_task(&dev_term); //keys above keyboard
   active = active || keyboard_task(&dev_term);
+
+  if (!active) {
+    low_power_enter_sleep();
+  }
 }
