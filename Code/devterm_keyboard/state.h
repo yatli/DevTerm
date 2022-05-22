@@ -27,18 +27,18 @@ enum class SelectorMode : uint8_t {
   Max
 };
 
-enum JOYMOUSE_KEY {
-  JM_SEL,
-  JM_STA,
-  JM_UP,
-  JM_DOWN,
-  JM_LEFT,
-  JM_RIGHT,
-  JM_A,
-  JM_B,
-  JM_X,
-  JM_Y,
-  JM_MAX,
+enum JOYSTICK_KEY {
+  JS_KEY_SEL,
+  JS_KEY_STA,
+  JS_KEY_UP,
+  JS_KEY_DOWN,
+  JS_KEY_LEFT,
+  JS_KEY_RIGHT,
+  JS_KEY_A,
+  JS_KEY_B,
+  JS_KEY_X,
+  JS_KEY_Y,
+  JS_KEY_MAX,
 };
 
 // 0-5
@@ -63,7 +63,8 @@ class State
     void setJoystickMode(JoystickMode);
     JoystickMode getJoystickMode();
     void fnJoystick(int8_t x, int8_t y);
-    void joystickMouseFeed(JOYMOUSE_KEY key, int8_t mode);
+    void joystickMouseFeed(JOYSTICK_KEY key, int8_t mode);
+    void joystickJoyFeed(JOYSTICK_KEY key, int8_t mode);
     void joystickMouseTask();
   private:
     bool middleClick;
@@ -73,7 +74,7 @@ class State
     DEVTERM* dv;
     SelectorMode selectorMode;
     JoystickMode joystickMode;
-    bool jm_keys[JM_MAX];
+    bool js_keys[JS_KEY_MAX];
     int jm_scroll_tick;
 };
 

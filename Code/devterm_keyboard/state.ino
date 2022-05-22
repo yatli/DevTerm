@@ -16,7 +16,7 @@ State::State(DEVTERM* dt)
     currentGear(2), // gear 3
     jm_scroll_tick(0)
 {
-  std::fill(jm_keys, jm_keys + JM_MAX, false);
+  std::fill(js_keys, js_keys + JS_KEY_MAX, false);
 }
 
 void State::tick(millis_t delta)
@@ -113,21 +113,78 @@ void State::fnJoystick(int8_t x, int8_t y) {
   }
 }
 
-void State::joystickMouseFeed(JOYMOUSE_KEY key, int8_t mode) {
-  jm_keys[key] = mode;
-  if (key == JM_B || key == JM_SEL) {
+void State::joystickMouseFeed(JOYSTICK_KEY key, int8_t mode) {
+  js_keys[key] = mode;
+  if (key == JS_KEY_B || key == JS_KEY_SEL) {
     if (mode == KEY_PRESSED) {
       dv->Mouse->press(MOUSE_LEFT);
     } else {
       dv->Mouse->release(MOUSE_LEFT);
     }
-  } else if (key == JM_A || key == JM_STA) {
+  } else if (key == JS_KEY_A || key == JS_KEY_STA) {
     if (mode == KEY_PRESSED) {
       dv->Mouse->press(MOUSE_RIGHT);
     } else {
       dv->Mouse->release(MOUSE_RIGHT);
     }
-  } else if (key == JM_X) {
+  } else if (key == JS_KEY_X) {
+    if (mode == KEY_PRESSED) {
+      pressMiddleClick();
+    } else {
+      if (!scrolled) {
+        dv->Mouse->click(MOUSE_MIDDLE);
+      }
+      releaseMiddleClick();
+    }
+  }
+}
+
+void State::joystickJoyFeed(JOYSTICK_KEY key, int8_t mode) {
+  js_keys[key] = mode;
+  switch (key)
+  {
+  case JS_KEY_UP:
+  case JS_KEY_DOWN:
+    if (js_keys[JS_KEY_UP] == KEY_PRESSED && js_keys[JS_KEY_DOWN] == KEY_RELEASED)
+    {
+      dv->Joystick->Y(0);
+    }
+    else if (js_keys[JS_KEY_UP] == KEY_RELEASED && js_keys[JS_KEY_DOWN] == KEY_PRESSED)
+    {
+      dv->Joystick->Y(1023);
+    } else 
+    {
+      dv->Joystick->Y(511);
+    }
+    break;
+    case JS_KEY_LEFT:
+    case JS_KEY_RIGHT:
+    if (js_keys[JS_KEY_LEFT] == KEY_PRESSED && js_keys[JS_KEY_RIGHT] == KEY_RELEASED)
+    {
+      dv->Joystick->X(0);
+    }
+    else if (js_keys[JS_KEY_LEFT] == KEY_RELEASED && js_keys[JS_KEY_RIGHT] == KEY_PRESSED)
+    {
+      dv->Joystick->X(1023);
+    } else 
+    {
+      dv->Joystick->X(511);
+    }
+    break;
+  }
+  if (key == JS_KEY_B || key == JS_KEY_SEL) {
+    if (mode == KEY_PRESSED) {
+      dv->Mouse->press(MOUSE_LEFT);
+    } else {
+      dv->Mouse->release(MOUSE_LEFT);
+    }
+  } else if (key == JS_KEY_A || key == JS_KEY_STA) {
+    if (mode == KEY_PRESSED) {
+      dv->Mouse->press(MOUSE_RIGHT);
+    } else {
+      dv->Mouse->release(MOUSE_RIGHT);
+    }
+  } else if (key == JS_KEY_X) {
     if (mode == KEY_PRESSED) {
       pressMiddleClick();
     } else {
@@ -143,22 +200,22 @@ void State::joystickMouseTask() {
   if (joystickMode != JoystickMode::Mouse) {
     return;
   }
-  bool slow = jm_keys[JM_Y];
+  bool slow = js_keys[JS_KEY_Y];
   int8_t x = 0;
   int8_t y = 0;
   int8_t w = 0;
   int8_t spd = slow ? 2 : 8;
 
-  if (jm_keys[JM_LEFT]) {
+  if (js_keys[JS_KEY_LEFT]) {
     x -= spd;
   }
-  if (jm_keys[JM_RIGHT]) {
+  if (js_keys[JS_KEY_RIGHT]) {
     x += spd;
   }
-  if (jm_keys[JM_UP]) {
+  if (js_keys[JS_KEY_UP]) {
     y -= spd;
   }
-  if (jm_keys[JM_DOWN]) {
+  if (js_keys[JS_KEY_DOWN]) {
     y += spd;
   }
 

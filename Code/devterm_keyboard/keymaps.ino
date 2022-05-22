@@ -202,13 +202,13 @@ void keyboard_action(DEVTERM*dv,uint8_t row,uint8_t col,uint8_t mode) {
     case _SELECT_KEY:
       JOY_ACTIONS(
           /*k*/ {k = ' '; KBD_ACTION(k); },
-          /*m*/dv->state->joystickMouseFeed(JM_SEL, mode),
+          /*m*/dv->state->joystickMouseFeed(JS_KEY_SEL, mode),
           /*j*/dv->Joystick->button(9, mode));
       break;
     case _START_KEY:
       JOY_ACTIONS(
           /*k*/{ k = KEY_RETURN; KBD_ACTION(k); }, 
-          /*m*/dv->state->joystickMouseFeed(JM_STA, mode), 
+          /*m*/dv->state->joystickMouseFeed(JS_KEY_STA, mode), 
           /*j*/dv->Joystick->button(10,mode));
     break;
     
@@ -281,72 +281,52 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
       FN_JOY_ACTION(0, -1);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_UP_ARROW),
-          /*m*/ dv->state->joystickMouseFeed(JM_UP, mode),
-          /*j*/ {
-            if(mode == KEY_RELEASED){
-              dv->Joystick->Y(511);
-            }else {
-              dv->Joystick->Y(0);
-            } });
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_UP, mode),
+          /*j*/ dv->state->joystickJoyFeed(JS_KEY_UP, mode));
       break;
     case _JOYSTICK_DOWN:
       FN_JOY_ACTION(0, 1);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_DOWN_ARROW),
-          /*m*/ dv->state->joystickMouseFeed(JM_DOWN, mode),
-          /*j*/ {
-            if(mode == KEY_RELEASED){
-              dv->Joystick->Y(511);
-            }else {
-              dv->Joystick->Y(1023);
-            } });
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_DOWN, mode),
+          /*j*/ dv->state->joystickJoyFeed(JS_KEY_DOWN, mode));
       break;
     case _JOYSTICK_LEFT:
       FN_JOY_ACTION(-1, 0);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_LEFT_ARROW),
-          /*m*/ dv->state->joystickMouseFeed(JM_LEFT, mode),
-          /*j*/ {
-            if(mode == KEY_RELEASED){
-              dv->Joystick->X(511);
-            }else {
-              dv->Joystick->X(0);
-            } });
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_LEFT, mode),
+          /*j*/ dv->state->joystickJoyFeed(JS_KEY_LEFT, mode));
       break;
     case _JOYSTICK_RIGHT:
       FN_JOY_ACTION(1, 0);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_RIGHT_ARROW),
-          /*m*/ dv->state->joystickMouseFeed(JM_RIGHT, mode),
-          /*j*/ {
-            if(mode == KEY_RELEASED){
-              dv->Joystick->X(511);
-            }else {
-              dv->Joystick->X(1023);
-            } });
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_RIGHT, mode),
+          /*j*/ dv->state->joystickJoyFeed(JS_KEY_RIGHT, mode));
     break;
     case _JOYSTICK_A:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('j'),
-          /*m*/ dv->state->joystickMouseFeed(JM_A, mode),
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_A, mode),
           /*j*/ dv->Joystick->button(2,mode));
     break;
     case _JOYSTICK_B:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('k'),
-          /*m*/ dv->state->joystickMouseFeed(JM_B, mode),
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_B, mode),
           /*j*/ dv->Joystick->button(3,mode));
     break;
     case _JOYSTICK_X:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('u'),
-          /*m*/ dv->state->joystickMouseFeed(JM_X, mode),
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_X, mode),
           /*j*/ dv->Joystick->button(1,mode));
     break;
     case _JOYSTICK_Y:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('i'),
-          /*m*/ dv->state->joystickMouseFeed(JM_Y, mode),
+          /*m*/ dv->state->joystickMouseFeed(JS_KEY_Y, mode),
           /*j*/ dv->Joystick->button(4,mode));
     break;
     case _MOUSE_LEFT:
