@@ -191,7 +191,8 @@ static const int MOVE_FAST = 8;
 static const int MOVE_SLOW = 2;
 
 bool State::joystickMouseTask() {
-  if (joystickMode != JoystickMode::Mouse) {
+  bool active = joystickDpadActive();
+  if (joystickMode != JoystickMode::Mouse || !active) {
     return false;
   }
   bool slow = js_keys[JS_KEY_Y];
