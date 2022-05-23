@@ -31,10 +31,16 @@ def gears() -> list[dict[str, Any]]:
         gear(little=(800000,) * 2, use="browsing most websites with long battery life"),
         gear(little=(1008000,) * 4, gpu_freq=400000000, use="most 2D games and emulators"),
         gear(big=(1008000,) * 2, gpu_freq=400000000, use="playing videos and 3D games"),
-        gear(big=(1200000,) * 2, gpu_freq=400000000, use="performance-first tasks"),
         gear(
-            # little=(1416000,) * 4,
-            little=(100800,) * 4,
+            little=(1008000,) * 4,
+            big=(1008000,) * 2, 
+            gpu_freq=400000000, 
+            cpu0_trip_point=65000,
+            cpu4_trip_point=65000,
+            use="performance-first tasks"),
+        gear(
+            little=(1416000,) * 4,
+            # little=(1008000,) * 4,
             big=(1800000,) * 2,
             gpu_freq=600000000,
             use="max performance, max power (usage)",
@@ -109,7 +115,7 @@ class A06:
     """A06 Module class."""
 
     cpus = []
-    cpu_scaling_governor: str = "ondemand"
+    cpu_scaling_governor: str = "schedutil"
     gear = load_gear(1)  # 1-5
     null_out: str = "2>/dev/null"
 
