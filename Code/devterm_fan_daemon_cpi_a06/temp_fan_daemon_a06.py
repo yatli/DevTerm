@@ -5,26 +5,32 @@ import os
 import sys,getopt
 import subprocess
 import time
+import math
 
 cpus = []
 mid_freq = 0
 max_freq = 0
 
-MAX_TEMP=70000
+MIN_TEMP=45000
+MAX_TEMP=65000
 ONCE_TIME=30
+PWM_PERIOD=50000000 # 50ms
+DUTY_CYCLES=[
+    35000000,
+    40000000,
+    42000000,
+    44000000,
+    46000000,
+    48000000,
+    49000000,
+    49400000,
+    49700000,
+    50000000,
+]
+fan_active = False
 
-def init_fan_gpio():
-    os.popen("gpio mode 41 out")
-
-def fan_on():
-    init_fan_gpio()
-    os.popen("gpio write 41 1")
-    time.sleep(ONCE_TIME)
-
-def fan_off():
-    init_fan_gpio()
-    os.popen("gpio write 41 0")
-
+THERMAL_ZONES = glob.glob('/sys/class/thermal/thermal_zone[0-9]/')
+THERMAL_ZONES.sort()
 
 def isDigit(x):
     try:
@@ -33,6 +39,24 @@ def isDigit(x):
     except ValueError:
         return False
 
+def echo(content, file):
+    # print("echo %s to %s" % (str(content), file))
+    with open(file, 'w') as f:
+        f.write(str(content))
+
+def init_fan_pwm():
+    try:
+        echo(0, "/sys/class/pwm/pwmchip0/export")
+    except:
+        pass
+    echo(PWM_PERIOD, "/sys/class/pwm/pwmchip0/pwm0/period")
+    echo(0, "/sys/class/pwm/pwmchip0/pwm0/duty_cycle")
+
+def fan_on():
+    echo(1, "/sys/class/pwm/pwmchip0/pwm0/enable")
+
+def fan_off():
+    echo(0, "/sys/class/pwm/pwmchip0/pwm0/enable")
 
 def cpu_infos():
     global cpus
@@ -61,7 +85,10 @@ def set_gov(gov):
     for var in cpus:
         gov_f = os.path.join(var,"cpufreq/scaling_governor")
         #print(gov_f)
-        subprocess.run( "echo %s | sudo tee  %s" %(gov,gov_f),shell=True)
+        try:
+            echo(gov, gov_f)
+        except:
+            print(f"Error: cannot set governor for {var}")
     
 def set_performance(scale):
     global cpus
@@ -77,29 +104,62 @@ def set_performance(scale):
     for var in cpus:
         _f = os.path.join(var,"cpufreq/scaling_max_freq")
         #print(_f)
-        subprocess.run( "echo %s | sudo tee  %s" %(freq,_f),shell=True)
-  
+        try:
+            echo(freq, _f)
+        except:
+            print(f"Error: cannot set performance for {var}")
 
-def fan_loop():
-    while True:
-        temps = glob.glob('/sys/class/thermal/thermal_zone[0-9]/')
-        temps.sort()
-        for var in temps:
-            _f = os.path.join(var,"temp")
-            #print( open(_f).read().strip("\n") )
-            _t = open(_f).read().strip("\n")
-            if isDigit(_t):
-                if int(_t) > MAX_TEMP:
-                    fan_on()
-                    fan_off()
-        
-        time.sleep(5)
+def decide_fan_level(temp):
+    """ 
+    Maps temperature to a fan level of [0-10]
+    """
+    if temp < MIN_TEMP:
+        return 0
+    elif temp >= MAX_TEMP:
+        return 10
+    else:
+        percent = (temp - MIN_TEMP) / (MAX_TEMP - MIN_TEMP)
+        return int(math.pow(percent, 2) * 10)
+
+def fan_set(level):
+    global DUTY_CYCLES
+    cycle = DUTY_CYCLES[level]
+    # print(cycle)
+    echo(cycle, '/sys/class/pwm/pwmchip0/pwm0/duty_cycle')
+    return
+
+def read_thermal_zone(tz) -> int:
+    _f = os.path.join(tz,"temp")
+    _t = open(_f).read().strip("\n")
+    if isDigit(_t):
+        # print(f"temp is: {_t}")
+        return int(_t)
+    else:
+        return 0
+
+def fan_loop() -> None:
+    global THERMAL_ZONES
+    global fan_active
+
+    tz_temps = map(read_thermal_zone, THERMAL_ZONES)
+    fan_levels = map(decide_fan_level, tz_temps)
+    fan_level = max(fan_levels)
+    if fan_level > 0:
+        if not fan_active:
+            fan_active = True
+            fan_on()
+        fan_set(fan_level)
+    else:
+        if fan_active:
+            fan_active = False
+            fan_off()
+    time.sleep(5)
 
 
 def main(argv):
     global cpus
     scale = 'mid'
-    gov   = 'powersave'
+    gov   = 'schedutil'
     try:
         opts, args = getopt.getopt(argv,"hs:g:",["scale=","governor="])
     except getopt.GetoptError:
@@ -116,11 +176,12 @@ def main(argv):
 
     print ('Scale is ', scale,"Gov is ",gov)
 
-    init_fan_gpio()
+    init_fan_pwm()
     cpu_infos()
     set_gov(gov)
     set_performance(scale)
-    fan_loop()
+    while True:
+        fan_loop()
 
 
 if __name__ == "__main__":
