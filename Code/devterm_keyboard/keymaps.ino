@@ -125,23 +125,23 @@ void dt_kbd_restore_layer(DEVTERM*dv) {
 
 #define KBD_ACTION(x) \
   if(mode == KEY_PRESSED) {   \
-    dv->Keyboard->press(x);   \
+    dv->state->queueUSB(UsbAction::KeyDown(x));   \
   } else {                    \
-    dv->Keyboard->release(x); \
+    dv->state->queueUSB(UsbAction::KeyUp(x)); \
   }                           \
 
 #define MOUSE_ACTION(x) \
   if(mode == KEY_PRESSED) {   \
-    dv->Mouse->press(x);   \
+    dv->state->queueUSB(UsbAction::MouseDown(x));   \
   } else {                    \
-    dv->Mouse->release(x); \
+    dv->state->queueUSB(UsbAction::MouseUp(x)); \
   }                           \
 
 #define CSM_ACTION(x) \
   if(mode == KEY_PRESSED) {   \
-    dv->Consumer->press(x);   \
+    dv->state->queueUSB(UsbAction::CSMDown(x));   \
   } else {                    \
-    dv->Consumer->release(); \
+    dv->state->queueUSB(UsbAction::CSMUp()); \
   }
 
 #define JOY_ACTIONS(js_kbd, js_mouse, js_joy) \
@@ -191,11 +191,11 @@ void keyboard_action(DEVTERM*dv,uint8_t row,uint8_t col,uint8_t mode) {
 
     case  KEY_CAPS_LOCK:
       if(mode == KEY_PRESSED) {
-        dv->Keyboard->press(k);
-        dv->Keyboard->setAdjustForHostCapsLock(true);
+        dv->state->queueUSB(UsbAction::KeyDown(k));
+        dv->state->queueUSB(UsbAction::SetAdjustForHostCapsLock(true));
       }else if(mode == KEY_RELEASED) {
-        dv->Keyboard->setAdjustForHostCapsLock(false);
-        dv->Keyboard->release(k);
+        dv->state->queueUSB(UsbAction::SetAdjustForHostCapsLock(false));
+        dv->state->queueUSB(UsbAction::KeyUp(k));
       }
     break;
     
@@ -203,13 +203,13 @@ void keyboard_action(DEVTERM*dv,uint8_t row,uint8_t col,uint8_t mode) {
       JOY_ACTIONS(
           /*k*/ {k = ' '; KBD_ACTION(k); },
           /*m*/dv->state->joystickMouseFeed(JS_KEY_SEL, mode),
-          /*j*/dv->Joystick->button(9, mode));
+          /*j*/dv->state->queueUSB(UsbAction::JoystickKey(9, mode)));
       break;
     case _START_KEY:
       JOY_ACTIONS(
           /*k*/{ k = KEY_RETURN; KBD_ACTION(k); }, 
           /*m*/dv->state->joystickMouseFeed(JS_KEY_STA, mode), 
-          /*j*/dv->Joystick->button(10,mode));
+          /*j*/dv->state->queueUSB(UsbAction::JoystickKey(10, mode)));
     break;
     
     case _FN_BRIGHTNESS_UP:
@@ -228,9 +228,9 @@ void keyboard_action(DEVTERM*dv,uint8_t row,uint8_t col,uint8_t mode) {
      
     default:
       if(mode == KEY_PRESSED) {
-        dv->Keyboard->press(k);
+        dv->state->queueUSB(UsbAction::KeyDown(k));
       }else if(mode == KEY_RELEASED) {
-        dv->Keyboard->release(k);
+        dv->state->queueUSB(UsbAction::KeyUp(k));
         
         if(dv->Keyboard_state.fn_on > 0){
           fn_actions[addr] = 0;
@@ -268,7 +268,7 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
         for(int i=0;i<64;i++) {
           if(fn_actions[i] !=0) {
             k = keyboard_maps[dv->Keyboard_state.fn_on][i];
-            dv->Keyboard->release(k);
+            dv->state->queueUSB(UsbAction::KeyUp(k));
             fn_actions[i] = 0;
           }
         }
@@ -309,25 +309,25 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('j'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_A, mode),
-          /*j*/ dv->Joystick->button(2,mode));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(2, mode)));
     break;
     case _JOYSTICK_B:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('k'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_B, mode),
-          /*j*/ dv->Joystick->button(3,mode));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(3, mode)));
     break;
     case _JOYSTICK_X:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('u'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_X, mode),
-          /*j*/ dv->Joystick->button(1,mode));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(1, mode)));
     break;
     case _JOYSTICK_Y:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('i'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_Y, mode),
-          /*j*/ dv->Joystick->button(4,mode));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(4, mode)));
     break;
     case _MOUSE_LEFT:
       MOUSE_ACTION(MOUSE_LEFT);
@@ -338,7 +338,7 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
       }else {
         if(dv->state->getScrolled() == false){
           //if no scrolling happend ,do as a normal mid mouse key click
-          dv->Mouse->click(MOUSE_MIDDLE);
+          dv->state->queueUSB(UsbAction::MouseClick(MOUSE_MIDDLE));
         }
         dv->state->releaseMiddleClick();
    
