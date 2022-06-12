@@ -1,0 +1,83 @@
+--- a/HIDReports.cpp
++++ b/HIDReports.cpp
+@@ -5,10 +5,10 @@
+     static const HIDReportDescriptor desc_ ## name = { raw_ ##name, sizeof(raw_ ##name) }; \
+     const HIDReportDescriptor* hidReport ## name = & desc_ ## name;
+ 
+-REPORT(KeyboardMouseJoystick, HID_MOUSE_REPORT_DESCRIPTOR(), HID_KEYBOARD_REPORT_DESCRIPTOR(), HID_JOYSTICK_REPORT_DESCRIPTOR());
+-REPORT(KeyboardMouse, HID_MOUSE_REPORT_DESCRIPTOR(), HID_KEYBOARD_REPORT_DESCRIPTOR());
++REPORT(KeyboardMouseJoystick, HID_MOUSE_2WHEEL_REPORT_DESCRIPTOR(), HID_KEYBOARD_REPORT_DESCRIPTOR(), HID_JOYSTICK_REPORT_DESCRIPTOR());
++REPORT(KeyboardMouse, HID_MOUSE_2WHEEL_REPORT_DESCRIPTOR(), HID_KEYBOARD_REPORT_DESCRIPTOR());
+ REPORT(Keyboard, HID_KEYBOARD_REPORT_DESCRIPTOR());
+-REPORT(Mouse, HID_MOUSE_REPORT_DESCRIPTOR());
++REPORT(Mouse, HID_MOUSE_2WHEEL_REPORT_DESCRIPTOR());
+ REPORT(AbsMouse, HID_ABS_MOUSE_REPORT_DESCRIPTOR());
+ REPORT(KeyboardJoystick, HID_KEYBOARD_REPORT_DESCRIPTOR(), HID_JOYSTICK_REPORT_DESCRIPTOR());
+ REPORT(Joystick, HID_JOYSTICK_REPORT_DESCRIPTOR());
+--- a/Mouse.cpp
++++ b/Mouse.cpp
+@@ -18,12 +18,13 @@ void HIDMouse::click(uint8_t b)
+ 	move(0,0,0);
+ }
+ 
+-void HIDMouse::move(signed char x, signed char y, signed char wheel)
++void HIDMouse::move(signed char x, signed char y, signed char vwheel, signed char hwheel)
+ {
+ 	reportBuffer[1] = _buttons;
+ 	reportBuffer[2] = x;
+ 	reportBuffer[3] = y;
+-	reportBuffer[4] = wheel;
++	reportBuffer[4] = vwheel;
++	reportBuffer[5] = hwheel;
+ 
+     sendReport();
+ }
+--- a/USBHID.h
++++ b/USBHID.h
+@@ -80,7 +80,7 @@
+     MACRO_ARGUMENT_2_TO_END(__VA_ARGS__)  \
+ 	0xC0 /* end collection */    
+     
+-#define HID_MOUSE_REPORT_DESCRIPTOR(...) \
++#define HID_MOUSE_2WHEEL_REPORT_DESCRIPTOR(...) \
+     0x05, 0x01,						/*  USAGE_PAGE (Generic Desktop)	// 54 */ \
+     0x09, 0x02,						/*  USAGE (Mouse) */ \
+     0xa1, 0x01,						/*  COLLECTION (Application) */ \
+@@ -104,6 +104,12 @@
+     0x75, 0x08,						/*      REPORT_SIZE (8) */ \
+     0x95, 0x03,						/*      REPORT_COUNT (3) */ \
+     0x81, 0x06,						/*      INPUT (Data,Var,Rel) */ \
++    /* ========= Horizontal Wheel ========= */ \
++    0x05, 0x0C,                     /*      Usage Page (Consumer) */ \
++    0x0A, 0x38, 0x02,               /*      Usage (AC Pan) */ \
++    0x75, 0x08,						/*      REPORT_SIZE (8) */ \
++    0x95, 0x01,                     /*      Report Count (1) */ \
++    0x81, 0x06,                     /*      Input (Data,Var,Rel) */ \
+     0xc0,      						/*    END_COLLECTION */ \
+     MACRO_ARGUMENT_2_TO_END(__VA_ARGS__)  \
+     0xc0      						/*  END_COLLECTION */ 
+@@ -442,19 +448,21 @@ class HIDReporter {
+ #define MOUSE_LEFT 1
+ #define MOUSE_RIGHT 2
+ #define MOUSE_MIDDLE 4
+-#define MOUSE_ALL (MOUSE_LEFT | MOUSE_RIGHT | MOUSE_MIDDLE)
++#define MOUSE_P4 8
++#define MOUSE_P5 16
++#define MOUSE_ALL (MOUSE_LEFT | MOUSE_RIGHT | MOUSE_MIDDLE | MOUSE_P4 | MOUSE_P5)
+ 
+ class HIDMouse : public HIDReporter {
+ protected:
+     uint8_t _buttons;
+ 	void buttons(uint8_t b);
+-    uint8_t reportBuffer[5];
++    uint8_t reportBuffer[6];
+ public:
+ 	HIDMouse(USBHID& HID, uint8_t reportID=HID_MOUSE_REPORT_ID) : HIDReporter(HID, hidReportMouse, reportBuffer, sizeof(reportBuffer), reportID), _buttons(0) {}
+ 	void begin(void);
+ 	void end(void);
+ 	void click(uint8_t b = MOUSE_LEFT);
+-	void move(signed char x, signed char y, signed char wheel = 0);
++	void move(signed char x, signed char y, signed char vwheel = 0, signed char hwheel = 0);
+ 	void press(uint8_t b = MOUSE_LEFT);		// press LEFT by default
+ 	void release(uint8_t b = MOUSE_LEFT);	// release LEFT by default
+ 	bool isPressed(uint8_t b = MOUSE_ALL);	// check all buttons by default
