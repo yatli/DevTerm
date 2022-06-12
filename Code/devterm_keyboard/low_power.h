@@ -5,6 +5,6 @@
 #include <libmaple/scb.h>
 
 
-void low_power_init();
+void low_power_init(DEVTERM* _dt);
 void low_power_enter_sleep();
 #endif /* __LOW_POWER_H */

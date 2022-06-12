@@ -109,6 +109,7 @@ bool trackball_task(DEVTERM*dv) {
   interrupts();
 
   if(x !=0 || y != 0 || -w!=0) {
+    // the trackball is inprecise so we don't do horizontal scroll here
     dv->Mouse->move(x, y, -w);
     return true;
   } else {

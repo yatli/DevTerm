@@ -196,9 +196,8 @@ bool State::joystickMouseTask() {
     return false;
   }
   bool slow = js_keys[JS_KEY_Y];
-  int8_t x = 0;
-  int8_t y = 0;
-  int8_t w = 0;
+  int8_t x = 0; int8_t y = 0; // move
+  int8_t v = 0; int8_t h = 0; // wheel
   int8_t spd = 0; 
   int8_t ticks = 0;
   const auto mode = moveTrackball();
@@ -206,41 +205,46 @@ bool State::joystickMouseTask() {
   if (mode == TrackballMode::Mouse) {
     spd = slow ? MOVE_SLOW : MOVE_FAST;
     ticks = 0;
-
-    if (js_keys[JS_KEY_LEFT]) {
-      x -= spd;
-    }
-    if (js_keys[JS_KEY_RIGHT]) {
-      x += spd;
-    }
-    if (js_keys[JS_KEY_UP]) {
-      y -= spd;
-    }
-    if (js_keys[JS_KEY_DOWN]) {
-      y += spd;
-    }
   } else {
     spd = slow ? SCROLL_SLOW_CNT : SCROLL_FAST_CNT;
     ticks = slow ? SCROLL_SLOW_TICKS : SCROLL_FAST_TICKS;
-    if (js_keys[JS_KEY_UP]) {
-      w -= spd;
-    }
-    if (js_keys[JS_KEY_DOWN]) {
-      w += spd;
-    }
+  }
+
+  if (js_keys[JS_KEY_LEFT]) {
+    x -= spd;
+  }
+  if (js_keys[JS_KEY_RIGHT]) {
+    x += spd;
+  }
+  if (js_keys[JS_KEY_UP]) {
+    y -= spd;
+  }
+  if (js_keys[JS_KEY_DOWN]) {
+    y += spd;
+  }
+
+  if (mode == TrackballMode::Wheel) {
+    v = y; h = x;
+    y = 0; x = 0;
+
     bool s = getScrolled();
     setScrolled();
     if (++jm_tick < ticks && s) {
-      w = 0;
+      v = 0; h = 0;
     } else {
       jm_tick = 0;
     }
   }
 
-  if(x !=0 || y != 0 || w!=0) {
-    dv->Mouse->move(x, y, -w);
+  if(x != 0 || y != 0 || v!=0 || h != 0) {
+    dv->Mouse->move(x, y, -v, h);
     return true;
   } else {
     return false;
   }
 }
+
+// https://eleccelerator.com/usbdescreqparser/
+// https://www.usb.org/sites/default/files/hut1_2.pdf
+// https://eleccelerator.com/tutorial-about-usb-hid-report-descriptors/
+// https://www.usb.org/sites/default/files/hid1_11.pdf
