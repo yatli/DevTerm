@@ -5,18 +5,27 @@
 #include "devterm.h"
 #include "state.h"
 #include "keyboard.h"
+#include "low_power.h"
+
+static int SLEEPTICK_MAX = 2000;
+
+extern USBHID HID;
 
 State::State(DEVTERM* dt)
   : dv(dt),
     fn(false),
     middleClick(false),
     scrolled(false),
-    joystickMode(JoystickMode::Joystick),
+    joystickMode(JoystickMode::Mouse),
     selectorMode(SelectorMode::Joystick),
     currentGear(2), // gear 3
-    jm_tick(0)
+    jm_tick(0),
+    sleep_tick(0),
+    usb_active(true),
+    pending_actions()
 {
   std::fill(js_keys, js_keys + JS_KEY_MAX, false);
+  sleep_tick = 0;
 }
 
 void State::tick(millis_t delta)
@@ -237,10 +246,48 @@ bool State::joystickMouseTask() {
   }
 
   if(x != 0 || y != 0 || v!=0 || h != 0) {
+    dv->state->wakeup();
     dv->Mouse->move(x, y, -v, h);
     return true;
   } else {
     return false;
+  }
+}
+
+void State::sleepTick() {
+  if (sleep_tick > SLEEPTICK_MAX) {
+    if (usb_active) {
+      usb_active = false;
+      HID.end();
+
+      // taken from usb_generic.c
+      gpio_set_mode(GPIOA, 12, GPIO_OUTPUT_PP);
+      gpio_write_bit(GPIOA, 12, 0);
+
+      delay_us(500);
+      // disconnects USBDP
+      gpio_set_mode(GPIOA, 12, GPIO_INPUT_FLOATING);
+      // disconnect USBDM
+      gpio_set_mode(GPIOA, 11, GPIO_INPUT_FLOATING);
+    } else {
+      // TODO really low power. currently does not wake up.
+      // low_power_enter_sleep();
+    }
+  } else {
+    ++sleep_tick;
+  }
+}
+
+void State::wakeup() {
+  sleep_tick = 0;
+  if (!usb_active) {
+    usb_active = true;
+    debug_led(true);
+    HID.begin();
+    while(!USBComposite)
+      ;
+    debug_led(false);
+    delay(50);
   }
 }
 

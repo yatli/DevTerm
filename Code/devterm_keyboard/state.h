@@ -4,6 +4,7 @@
 #include <bitset>
 #include <array>
 #include <USBComposite.h>
+#include <queue>
 
 #include "debouncer.h"
 
@@ -44,6 +45,14 @@ enum JOYSTICK_KEY {
 // 0-5
 constexpr int GearMax = 6;
 
+struct UsbAction {
+  uint8_t type;
+  uint8_t arg0;
+  uint8_t arg1;
+  uint8_t arg2;
+  uint8_t arg3;
+};
+
 class State
 {
   public:
@@ -67,6 +76,11 @@ class State
     void joystickJoyFeed(JOYSTICK_KEY key, int8_t mode);
     bool joystickMouseTask();
     bool joystickDpadActive();
+
+    void sleepTick();
+    void wakeup();
+    void postAction();
+    void flushActions();
   private:
     bool middleClick;
     bool scrolled;
@@ -77,6 +91,9 @@ class State
     JoystickMode joystickMode;
     bool js_keys[JS_KEY_MAX];
     int jm_tick;
+    int sleep_tick;
+    bool usb_active;
+    std::queue<UsbAction> pending_actions;
 };
 
 #endif

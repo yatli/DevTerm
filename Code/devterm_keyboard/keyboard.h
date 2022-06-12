@@ -51,4 +51,8 @@ void keyboard_init(DEVTERM*);
 #define KEY_VOLUME_UP 0x108  // - 0x88 == usb hut1_12v2.pdf keyboard code
 #define KEY_VOLUME_DOWN 0x109 //  - 0x88 == usb hut1_12v2.pdf keyboard code
 
+inline void debug_led(bool on) {
+    digitalWrite(PC13, !on);
+}
+
 #endif

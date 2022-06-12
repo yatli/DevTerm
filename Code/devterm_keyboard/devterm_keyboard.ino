@@ -51,7 +51,6 @@ void setup() {
   HID.begin(*dev_term._Serial,reportDescription, sizeof(reportDescription));
 
   while(!USBComposite);//wait until usb port been plugged in to PC
-  
 
   keyboard_init(&dev_term);
   keys_init(&dev_term);
@@ -60,6 +59,8 @@ void setup() {
   dev_term._Serial->println("setup done");
 
   pinMode(PD2,INPUT);// switch 2 in back 
+  pinMode(PC13, OUTPUT); // PC13 is the LED
+  debug_led(false);
   if (check_pd2() == HIGH) {
     // backward compat
     dev_term.state->setJoystickMode(JoystickMode::Keyboard);
@@ -69,9 +70,6 @@ void setup() {
   // note, don't initialize low-power mode before delay(1000) -- it is that one gives you a chance to re-program the device
   low_power_init(&dev_term);
 }
-
-int inactive_cnt = 0;
-int sleep_cnt = 0;
 
 void loop() {
   dev_term.delta = waiter.waitForNextTick();
@@ -84,6 +82,6 @@ void loop() {
   active = active || keyboard_task(&dev_term);
 
   if (!active) {
-    low_power_enter_sleep();
+    dev_term.state->sleepTick();
   }
 }

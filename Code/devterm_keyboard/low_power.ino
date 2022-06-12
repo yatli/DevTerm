@@ -28,7 +28,7 @@ void low_power_init(DEVTERM* _dt) {
   pinMode(PA14, INPUT_FLOATING);
   pinMode(PA15, INPUT_FLOATING);
 
-  pinMode(PC13, OUTPUT);
+  digitalWrite(PC13, HIGH);
 
   // TODO:
   //  wakeup sources:

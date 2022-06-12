@@ -77,6 +77,7 @@ bool keys_task(DEVTERM*dv){
   _change = keys ^ keys_prev;
 
   if(_change) {
+    dv->state->wakeup();
     
     for(uint8_t c=0;c < KEYS_NUM;c++,_mask <<=1) {
       if (_change & _mask) {

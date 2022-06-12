@@ -143,7 +143,7 @@ void matrix_press(DEVTERM*dv,uint8_t row,uint8_t col) {
   char buff[128];
 
   if(matrix_is_on(row,col) == true ){
-    sprintf(buff,"%d %d M%d pressed\n",row,col,(row+1)*10+col+1);
+    // sprintf(buff,"%d %d M%d pressed\n",row,col,(row+1)*10+col+1);
     //dv->_Serial->print(buff);
     keyboard_action(dv,row,col,KEY_PRESSED);
   }
@@ -155,7 +155,7 @@ void matrix_release(DEVTERM*dv,uint8_t row,uint8_t col) {
 
   
   if(matrix_is_on(row,col) == false ){
-    sprintf(buff,"%d %d M%d released\n",row,col,(row+1)*10+col+1);
+    // sprintf(buff,"%d %d M%d released\n",row,col,(row+1)*10+col+1);
     //dv->_Serial->print(buff);
     keyboard_action(dv,row,col,KEY_RELEASED);
         
@@ -178,6 +178,7 @@ bool keyboard_task(DEVTERM*dv)
     matrix_change = matrix_row ^ matrix_prev[r];
     if (matrix_change) { 
       any_change = true;
+      dv->state->wakeup();
       uint8_t col_mask = 1;
       for (uint8_t c = 0; c < MATRIX_COLS; c++, col_mask <<= 1) {
         if (matrix_change & col_mask) {
