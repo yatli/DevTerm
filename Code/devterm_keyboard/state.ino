@@ -322,7 +322,7 @@ void State::flushUSB() {
     if (usb_resuming) {
       if (USBComposite) {
         debug_led(false);
-        delay(50);
+        delay(100);
         usb_resuming = false;
         usb_active = true;
         hold = false;
