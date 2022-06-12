@@ -24,6 +24,7 @@ State::State(DEVTERM* dt)
     sleep_tick(0),
     usb_active(true),
     usb_resuming(false),
+    usb_resume_tick(0),
     pending_actions()
 {
   std::fill(js_keys, js_keys + JS_KEY_MAX, false);
@@ -282,8 +283,12 @@ void State::queueUSB(UsbAction action)
 }
 
 void State::flushUSB() {
+  if (usb_resume_tick > 0) {
+    --usb_resume_tick;
+    return;
+  }
   if (pending_actions.size() == 0) { // idle
-    if (sleep_tick > SLEEPTICK_MAX)
+    if (sleep_tick >= SLEEPTICK_MAX)
     {
       // power down now
       if (usb_active)
@@ -292,15 +297,12 @@ void State::flushUSB() {
         usb_resuming = false;
         HID.end();
 
-        // taken from usb_generic.c
+        //  disconnects USBDP
         gpio_set_mode(GPIOA, 12, GPIO_OUTPUT_PP);
         gpio_write_bit(GPIOA, 12, 0);
-
-        delay_us(500);
-        // disconnects USBDP
-        gpio_set_mode(GPIOA, 12, GPIO_INPUT_FLOATING);
-        // disconnect USBDM
-        gpio_set_mode(GPIOA, 11, GPIO_INPUT_FLOATING);
+        //  disconnect USBDM
+        gpio_set_mode(GPIOA, 11, GPIO_OUTPUT_PP);
+        gpio_write_bit(GPIOA, 11, 0);
       }
       else
       {
@@ -318,23 +320,19 @@ void State::flushUSB() {
   sleep_tick = 0;
   int dequeue_cnt = 0;
   if (!usb_active) {
-    bool hold = true;
     if (usb_resuming) {
       if (USBComposite) {
         debug_led(false);
-        delay(100);
+        usb_resume_tick = 120;
         usb_resuming = false;
         usb_active = true;
-        hold = false;
       }
     } else {
       debug_led(true);
       HID.begin();
       usb_resuming = true;
     }
-    if (hold) {
-      return;
-    }
+    return;
   }
 
   const char* pmsg;

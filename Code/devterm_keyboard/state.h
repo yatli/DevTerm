@@ -164,6 +164,7 @@ class State
     int sleep_tick;
     bool usb_active;
     bool usb_resuming;
+    int usb_resume_tick;
     std::queue<UsbAction> pending_actions;
 };
 
