@@ -34,7 +34,7 @@ def handle_selector(line):
         pass
 
 def main_loop():
-    ser = serial.Serial('/dev/ttyACM0')
+    ser = serial.Serial('/dev/serial/by-path/platform-fe380000.usb-usb-0:1.1:1.1')
     while True:
         line = ser.readline().decode('utf-8').split()
         if len(line) < 1:
@@ -54,4 +54,4 @@ if __name__ == "__main__":
         try:
             main_loop();
         except:
-            sleep(5)
+            sleep(1)
