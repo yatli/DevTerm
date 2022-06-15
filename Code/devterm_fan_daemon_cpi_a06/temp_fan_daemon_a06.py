@@ -20,6 +20,7 @@ DUTY_CYCLES=[
     44000000,
     46000000,
     47000000,
+    47500000,
     48000000,
     48500000,
     49000000,
@@ -84,7 +85,7 @@ def set_gov(gov):
     global cpus
     for var in cpus:
         gov_f = os.path.join(var,"cpufreq/scaling_governor")
-        #print(gov_f)
+        # print(gov_f)
         try:
             echo(gov, gov_f)
         except:
@@ -111,10 +112,10 @@ def set_performance(scale):
 
 def decide_fan_level(temp):
     """ 
-    Maps temperature to a fan level of [0-10]
+    Maps temperature to a fan level of Off/[0-10]
     """
     if temp < MIN_TEMP:
-        return 0
+        return -1
     elif temp >= MAX_TEMP:
         return 10
     else:
@@ -124,7 +125,7 @@ def decide_fan_level(temp):
 def fan_set(level):
     global DUTY_CYCLES
     cycle = DUTY_CYCLES[level]
-    # print(cycle)
+    print(cycle)
     echo(cycle, '/sys/class/pwm/pwmchip0/pwm0/duty_cycle')
     return
 
@@ -144,7 +145,7 @@ def fan_loop() -> None:
     tz_temps = map(read_thermal_zone, THERMAL_ZONES)
     fan_levels = map(decide_fan_level, tz_temps)
     fan_level = max(fan_levels)
-    if fan_level > 0:
+    if fan_level >= 0:
         if not fan_active:
             fan_active = True
             fan_on()
@@ -183,7 +184,9 @@ def main(argv):
     while True:
         fan_loop()
 
+def test_temp(T):
+    print(f'fan level[{T}] = {decide_fan_level(T)}')
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+    main(sys.argv[1:])
 
