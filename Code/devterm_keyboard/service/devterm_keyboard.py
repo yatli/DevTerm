@@ -1,6 +1,8 @@
 import serial
+import sys
 from os import system
 from time import sleep
+import devterm_gearbox
 
 def notify_send(s):
     system(f'/usr/local/bin/root-notify-send "{s}"')
@@ -10,6 +12,7 @@ def handle_gear(line):
         g = int(line[1])
         g = max(g, 1)
         g = min(g, 6)
+        devterm_gearbox.devterm.set_gear(g)
         system(f'/usr/bin/gearbox-clockworkpi-a06 -s {g}')
         notify_send(f'Gear = {g}')
     except:
