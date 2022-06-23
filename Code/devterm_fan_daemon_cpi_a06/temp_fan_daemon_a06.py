@@ -156,7 +156,6 @@ def fan_loop() -> None:
             fan_off()
     time.sleep(5)
 
-
 def main(argv):
     global cpus
     scale = 'mid'
