@@ -6,4 +6,4 @@ install:
 	# pip install pyserial
 	systemctl daemon-reload
 	systemctl enable devterm-keyboard.service
-	systemctl start devterm-keyboard.service
+	systemctl restart devterm-keyboard.service
