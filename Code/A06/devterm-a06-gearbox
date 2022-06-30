@@ -24,29 +24,52 @@ from typing import Any, NoReturn
 GPU_GOV_SIMPLE = "simple_ondemand"
 GPU_GOV_PERF = "performance"
 
+def echo(content, file):
+    # print("echo %s to %s" % (str(content), file))
+    with open(file, 'w') as f:
+        f.write(str(content))
 
 def gears() -> list[dict[str, Any]]:
     return [
-        gear(little=(600000,), use="simple writing tasks with long battery life"),
-        gear(little=(800000,) * 2, use="browsing most websites with long battery life"),
-        gear(little=(1008000,) * 4, gpu_freq=400000000, use="most 2D games and emulators"),
-        gear(big=(1008000,) * 2, gpu_freq=400000000, use="playing videos and 3D games"),
-        gear(
-            little=(1008000,) * 4,
-            big=(1008000,) * 2, 
-            gpu_freq=400000000, 
+        gear(little=(816000,) * 1, 
+            gpu_freq=200000000, 
+            use="lowpower",
             cpu0_trip_point=65000,
-            cpu4_trip_point=65000,
-            use="performance-first tasks"),
-        gear(
-            little=(1416000,) * 4,
-            # little=(1008000,) * 4,
-            big=(1800000,) * 2,
-            gpu_freq=600000000,
-            use="max performance, max power (usage)",
-            cpu0_trip_point=77000,
-            cpu4_trip_point=77000,
-        ),
+            cpu4_trip_point=65000),
+        gear(big=(1008000,) * 2, 
+            gpu_freq=400000000, 
+            use="l-cluster off",
+            cpu0_trip_point=65000,
+            cpu4_trip_point=65000),
+        gear(little=(1008000,) * 4, 
+            gpu_freq=400000000, 
+            use="b-cluster off",
+            cpu0_trip_point=65000,
+            cpu4_trip_point=65000),
+        gear(little=(1008000,) * 4,
+            big=(1008000,) * 2, 
+            gpu_freq=400000000,
+            use="balanced",
+            cpu0_trip_point=65000,
+            cpu4_trip_point=65000),
+        gear(little=(1200000,) * 4,
+            big=(1416000,) * 2, 
+            gpu_freq=400000000, 
+            use="faster",
+            cpu0_trip_point=70000,
+            cpu4_trip_point=70000),
+        gear(little=(1200000,) * 4,
+            big=(1608000,) * 2, 
+            gpu_freq=400000000, 
+            use="don't grill your BATT",
+            cpu0_trip_point=73000,
+            cpu4_trip_point=73000),
+        # gear(little=(1416000,) * 4,
+            # big=(1800000,) * 2,
+            # gpu_freq=600000000,
+            # use="max performance, max power (usage)",
+            # cpu0_trip_point=77000,
+            # cpu4_trip_point=77000),
     ]
 
 
@@ -147,22 +170,14 @@ class A06:
     def set_cpu_gov0(self, gov):
         cpu_gov_path = "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor"
         try:
-            subprocess.run(
-                "echo %s | sudo tee  %s " % (gov, cpu_gov_path),
-                shell=True,
-                stdout=subprocess.DEVNULL,
-            )
+            echo(gov, cpu_gov_path)
         except Exception:
             print("set cpu governor failed")
 
     def set_cpu_gov4(self, gov):
         cpu_gov_path = "/sys/devices/system/cpu/cpufreq/policy4/scaling_governor"
         try:
-            subprocess.run(
-                "echo %s | sudo tee  %s" % (gov, cpu_gov_path),
-                shell=True,
-                stdout=subprocess.DEVNULL,
-            )
+            echo(gov, cpu_gov_path)
         except Exception:
             print("set cpu governor failed")
 
@@ -182,33 +197,21 @@ class A06:
     def set_cpu_on_off(self, cpu_num, onoff):
         cpu_onoff_file = "/sys/devices/system/cpu/cpu%d/online" % cpu_num
         try:
-            subprocess.run(
-                "echo %d | sudo tee  %s" % (onoff, cpu_onoff_file),
-                shell=True,
-                stdout=subprocess.DEVNULL,
-            )
+            echo(onoff, cpu_onoff_file)
         except Exception:
             print("set cpu %d on off failed" % cpu_num)
 
     def set_cpu_max_freq(self, cpu_num, max_freq):
         cpu_max_freq_file = "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_max_freq" % cpu_num
         try:
-            subprocess.run(
-                "echo %d | sudo tee  %s" % (max_freq, cpu_max_freq_file),
-                shell=True,
-                stdout=subprocess.DEVNULL,
-            )
+            echo(max_freq, cpu_max_freq_file)
         except Exception:
             print("set cpu %d max freq failed" % cpu_num)
 
     def set_thermalzone_trip_point(self, zone, trip_point, temp):
         trip_point_file = "/sys/class/thermal/thermal_zone%d/trip_point_%d_temp" % (zone, trip_point)
         try:
-            subprocess.run(
-                "echo %d | sudo tee  %s" % (temp, trip_point_file),
-                shell=True,
-                stdout=subprocess.DEVNULL,
-            )
+            echo(temp, trip_point_file)
         except Exception:
             print("set thermalzone %d trip point %d failed" % (zone, trip_point))
 
@@ -226,12 +229,8 @@ class A06:
         gpu_gov_path = os.path.join(gpu_sys_path, "governor")
         gpu_freq_path = os.path.join(gpu_sys_path, "max_freq")
         try:
-            subprocess.run(
-                "echo %s | sudo tee %s" % (gov, gpu_gov_path), shell=True, stdout=subprocess.DEVNULL
-            )
-            subprocess.run(
-                "echo %d | sudo tee %s" % (hz, gpu_freq_path), shell=True, stdout=subprocess.DEVNULL
-            )
+            echo(gov, gpu_gov_path)
+            echo(hz, gpu_freq_path)
         except Exception:
             print("set gpu failed")
 
@@ -263,19 +262,17 @@ class A06:
 
     def set_gear(self, g):
         self.gear = load_gear(g)
+        cpu_vec = self.gear["cpu"]
+        bigcores_on = (cpu_vec[4] + cpu_vec[5]) > 0
+        cpu_vec = list(enumerate(cpu_vec))
+        if bigcores_on:
+            cpu_vec = reversed(cpu_vec)
 
-        if g > 3:
-            for (cpu, freq) in reversed(list(enumerate(self.gear["cpu"]))):
-                enabled = freq > 0
-                self.set_cpu_on_off(cpu, int(enabled))
-                if enabled:
-                    self.set_cpu_max_freq(cpu, freq)
-        else:
-            for (cpu, freq) in enumerate(self.gear["cpu"]):
-                enabled = freq > 0
-                self.set_cpu_on_off(cpu, int(enabled))
-                if enabled:
-                    self.set_cpu_max_freq(cpu, freq)
+        for (cpu, freq) in cpu_vec:
+            enabled = freq > 0
+            self.set_cpu_on_off(cpu, int(enabled))
+            if enabled:
+                self.set_cpu_max_freq(cpu, freq)
 
         self.set_gpu(self.gear["gpu_gov"], self.gear["gpu_freq"])
         self.set_thermalzone_trip_point(0, 0, self.gear[ "cpu0_trip_point" ])
@@ -341,9 +338,9 @@ def is_root() -> bool:
     return os.geteuid() == 0
 
 
+devterm = A06()
 def main() -> SystemExit:
-    devterm = A06()
-
+    global devterm
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("-s", "--set", type=int)
     parser.add_argument("-h", "--help", action="store_true")

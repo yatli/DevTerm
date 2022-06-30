@@ -159,6 +159,6 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# VSCode Arduino
 Code/devterm_keyboard/.vscode/c_cpp_properties.json
 Code/devterm_keyboard/.vscode/settings.json
+.DS_Store

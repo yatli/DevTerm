@@ -9,12 +9,8 @@ debug:
 
 #sudo make -B install
 install:
-	/etc/init.d/cups stop
-	cp rastertocpi /usr/lib/cups/filter/
+	systemctl stop cups
+	install rastertocpi /usr/lib/cups/filter/
 	mkdir -p /usr/share/cups/model/clockworkpi
-	cp cpi58.ppd /usr/share/cups/model/clockworkpi/
-	cd /usr/lib/cups/filter
-	chmod 755 rastertocpi
-	chown root:root rastertocpi
-	cd -
-	/etc/init.d/cups start
+	install -m 644 cpi58.ppd /usr/share/cups/model/clockworkpi/
+	systemctl start cups

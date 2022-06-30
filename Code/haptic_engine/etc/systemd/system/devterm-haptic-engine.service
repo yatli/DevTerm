@@ -1,0 +1,11 @@
+[Unit]
+Description=devterm haptic engine main process
+Conflicts=devterm-printer.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/devterm_haptic_engine.elf
+
+
+[Install]
+WantedBy=multi-user.target
