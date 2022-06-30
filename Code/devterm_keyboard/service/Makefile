@@ -7,3 +7,6 @@ install:
 	systemctl daemon-reload
 	systemctl enable devterm-keyboard.service
 	systemctl restart devterm-keyboard.service
+update:
+	install devterm_keyboard.py /usr/local/bin/
+	systemctl restart devterm-keyboard.service
