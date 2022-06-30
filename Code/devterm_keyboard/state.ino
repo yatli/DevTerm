@@ -7,7 +7,7 @@
 #include "keyboard.h"
 #include "low_power.h"
 
-static int SLEEPTICK_MAX = 2000;
+static int SLEEPTICK_MAX = 30000;
 
 extern USBHID HID;
 
@@ -19,12 +19,15 @@ State::State(DEVTERM* dt)
     joystickMode(JoystickMode::Mouse),
     selectorMode(SelectorMode::Joystick),
     powerSaveMode(PowerSaveMode::On),
-    currentGear(2), // gear 3
+    jsmouseOverlay(JSMouseOverlay::None),
+    js_mouse_slow(false),
     jm_tick(0),
     sleep_tick(0),
     usb_active(true),
     usb_resuming(false),
-    usb_resume_tick(0),
+    usb_resume_loops(0),
+    serial_active(true),
+    usb_inactive_mouse(false),
     pending_actions()
 {
   std::fill(js_keys, js_keys + JS_KEY_MAX, false);
@@ -105,30 +108,39 @@ const char* _powerSaveMsgs[(int)PowerSaveMode::Max] = {
   "powersave on",
 };
 
-const char* _gearMsgs[GearMax] = {
-  "gear 1",
-  "gear 2",
-  "gear 3",
-  "gear 4",
-  "gear 5",
-  "gear 6",
-};
-
 const char* _joystickModeMsgs[(int)JoystickMode::Max] = {
   "joystick joystick",
   "joystick keyboard",
   "joystick mouse",
 };
 
+static inline void _usb_disconnect() {
+  HID.end();
+  //  disconnects USBDP
+  gpio_set_mode(GPIOA, 12, GPIO_OUTPUT_PP);
+  gpio_write_bit(GPIOA, 12, 0);
+  //  disconnect USBDM
+  gpio_set_mode(GPIOA, 11, GPIO_OUTPUT_PP);
+  gpio_write_bit(GPIOA, 11, 0);
+
+  /* caused keyboard freezing (maybe):
+  delay(10);
+  gpio_set_mode(GPIOA, 11, GPIO_INPUT_FLOATING);
+  */
+}
+
 void State::fnJoystick(int8_t x, int8_t y) {
   if (x) { // selector switch
     selectorMode = _ringadd(selectorMode, x, SelectorMode::Max);
     queueUSB(UsbAction::SerialPrint(_selectorModeMsgs[(int)selectorMode]));
   } else if (y) { // value adjust
+    const char* msg;
     switch(selectorMode) {
       case SelectorMode::Gear:
-        currentGear = _clampadd(currentGear, -y, 0, GearMax - 1);
-        queueUSB(UsbAction::SerialPrint(_gearMsgs[(int)currentGear]));
+        msg = (y > 0) ?
+          "gear down" :
+          "gear up";
+        queueUSB(UsbAction::SerialPrint(msg));
       break;
       case SelectorMode::Joystick:
         joystickMode = _ringadd(joystickMode, -y, JoystickMode::Max);
@@ -143,28 +155,113 @@ void State::fnJoystick(int8_t x, int8_t y) {
   }
 }
 
+#define REPORT_USB_ACTION(action, x)                 \
+  if (mode == KEY_PRESSED)                           \
+  {                                                  \
+    dv->state->queueUSB(UsbAction::action##Down(x)); \
+  }                                                  \
+  else                                               \
+  {                                                  \
+    dv->state->queueUSB(UsbAction::action##Up(x));   \
+  }
+
+#define REPORT_USB_JSBUTTON(x) \
+  dv->state->queueUSB(UsbAction::JoystickKey(x, mode));
+
 void State::joystickMouseFeed(JOYSTICK_KEY key, int8_t mode) {
   js_keys[key] = mode;
-  if (key == JS_KEY_B || key == JS_KEY_SEL) {
-    if (mode == KEY_PRESSED) {
-      dv->state->queueUSB(UsbAction::MouseDown(MOUSE_LEFT));
-    } else {
-      dv->state->queueUSB(UsbAction::MouseUp(MOUSE_LEFT));
-    }
-  } else if (key == JS_KEY_A || key == JS_KEY_STA) {
-    if (mode == KEY_PRESSED) {
-      dv->state->queueUSB(UsbAction::MouseDown(MOUSE_RIGHT));
-    } else {
-      dv->state->queueUSB(UsbAction::MouseUp(MOUSE_RIGHT));
-    }
-  } else if (key == JS_KEY_X) {
-    if (mode == KEY_PRESSED) {
-      pressMiddleClick();
-    } else {
-      if (!scrolled) {
-        dv->state->queueUSB(UsbAction::MouseClick(MOUSE_MIDDLE));
+  if (jsmouseOverlay == JSMouseOverlay::None) {
+    switch (key)
+    {
+    case JS_KEY_B:
+      REPORT_USB_ACTION(Mouse, MOUSE_LEFT);
+      break;
+    case JS_KEY_A:
+      REPORT_USB_ACTION(Mouse, MOUSE_RIGHT);
+      break;
+    case JS_KEY_X:
+      if (mode == KEY_PRESSED)
+      {
+        pressMiddleClick();
       }
-      releaseMiddleClick();
+      else
+      {
+        if (!getScrolled())
+        {
+          dv->state->queueUSB(UsbAction::MouseClick(MOUSE_MIDDLE));
+        }
+        releaseMiddleClick();
+      }
+      break;
+    case JS_KEY_Y:
+      js_mouse_slow = (mode == KEY_PRESSED);
+      break;
+    case JS_KEY_SEL:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1);
+      if (mode == KEY_PRESSED) {
+        jsmouseOverlay = JSMouseOverlay::Layer1;
+      }
+      break;
+    case JS_KEY_STA:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2);
+      if (mode == KEY_PRESSED) {
+        jsmouseOverlay = JSMouseOverlay::Layer2;
+      }
+      break;
+    }
+  } else if (jsmouseOverlay == JSMouseOverlay::Layer1) {
+    switch(key) {
+    case JS_KEY_B:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1_B);
+      break;
+    case JS_KEY_A:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1_A);
+      break;
+    case JS_KEY_Y:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1_Y);
+      break;
+    case JS_KEY_X:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1_X);
+      break;
+    case JS_KEY_SEL:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1);
+      if (mode == KEY_RELEASED) {
+        jsmouseOverlay = JSMouseOverlay::None;
+      }
+      break;
+    case JS_KEY_STA:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2);
+      if (mode == KEY_PRESSED) {
+        jsmouseOverlay = JSMouseOverlay::Layer2;
+      }
+      break;
+    }
+  } else if (jsmouseOverlay == JSMouseOverlay::Layer2) {
+    switch(key) {
+    case JS_KEY_B:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2_B);
+      break;
+    case JS_KEY_A:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2_A);
+      break;
+    case JS_KEY_Y:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2_Y);
+      break;
+    case JS_KEY_X:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2_X);
+      break;
+    case JS_KEY_SEL:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML1);
+      if (mode == KEY_PRESSED) {
+        jsmouseOverlay = JSMouseOverlay::Layer1;
+      }
+      break;
+    case JS_KEY_STA:
+      REPORT_USB_JSBUTTON(JS_BUTTON_JML2);
+      if (mode == KEY_RELEASED) {
+        jsmouseOverlay = JSMouseOverlay::None;
+      }
+      break;
     }
   }
 }
@@ -225,7 +322,6 @@ bool State::joystickMouseTask() {
   if (joystickMode != JoystickMode::Mouse || !active) {
     return false;
   }
-  bool slow = js_keys[JS_KEY_Y];
   int8_t x = 0; int8_t y = 0; // move
   int8_t v = 0; int8_t h = 0; // wheel
   int8_t spd = 0; 
@@ -233,11 +329,11 @@ bool State::joystickMouseTask() {
   const auto mode = moveTrackball();
 
   if (mode == TrackballMode::Mouse) {
-    spd = slow ? MOVE_SLOW : MOVE_FAST;
+    spd = js_mouse_slow ? MOVE_SLOW : MOVE_FAST;
     ticks = 0;
   } else {
-    spd = slow ? SCROLL_SLOW_CNT : SCROLL_FAST_CNT;
-    ticks = slow ? SCROLL_SLOW_TICKS : SCROLL_FAST_TICKS;
+    spd = js_mouse_slow ? SCROLL_SLOW_CNT : SCROLL_FAST_CNT;
+    ticks = js_mouse_slow ? SCROLL_SLOW_TICKS : SCROLL_FAST_TICKS;
   }
 
   if (js_keys[JS_KEY_LEFT]) {
@@ -279,12 +375,24 @@ void State::queueUSB(UsbAction action)
   if (pending_actions.size() >= 64) {
     return;
   }
+  if (!usb_active && action.type == UsbActionType::MouseMove) {
+    if (!usb_inactive_mouse) {
+      // only queue first
+      usb_inactive_mouse = true;
+    } else {
+      return;
+    }
+  }
   pending_actions.push(action);
 }
 
 void State::flushUSB() {
-  if (usb_resume_tick > 0) {
-    --usb_resume_tick;
+  if (usb_resume_loops > 0) {
+    --usb_resume_loops;
+    if (usb_resume_loops == 0) {
+        usb_resuming = false;
+        usb_active = true;
+    }
     return;
   }
   if (pending_actions.size() == 0) { // idle
@@ -295,14 +403,8 @@ void State::flushUSB() {
       {
         usb_active = false;
         usb_resuming = false;
-        HID.end();
-
-        //  disconnects USBDP
-        gpio_set_mode(GPIOA, 12, GPIO_OUTPUT_PP);
-        gpio_write_bit(GPIOA, 12, 0);
-        //  disconnect USBDM
-        gpio_set_mode(GPIOA, 11, GPIO_OUTPUT_PP);
-        gpio_write_bit(GPIOA, 11, 0);
+        usb_inactive_mouse = false; // re-arm 1st mouse move
+        _usb_disconnect();
       }
       else
       {
@@ -312,7 +414,7 @@ void State::flushUSB() {
     }
     else if (!usb_resuming && joystickMode != JoystickMode::Joystick && powerSaveMode != PowerSaveMode::Off)
     {
-      ++sleep_tick;
+      sleep_tick += dv->delta;
     }
     return;
   }
@@ -323,13 +425,12 @@ void State::flushUSB() {
     if (usb_resuming) {
       if (USBComposite) {
         debug_led(false);
-        usb_resume_tick = 120;
-        usb_resuming = false;
-        usb_active = true;
+        usb_resume_loops = 120;
       }
     } else {
       debug_led(true);
       HID.begin();
+      serial_active = false;
       usb_resuming = true;
     }
     return;
@@ -379,6 +480,18 @@ void State::flushUSB() {
       dv->Joystick->button(action.arg0, action.arg1);
       break;
     case SerialPrint:
+
+      if (!serial_active) {
+        _usb_disconnect();
+        delay(50);
+        HID.begin(*dv->_Serial, NULL, 0);
+        while(!USBComposite) {
+          delay(10);
+        }
+        delay(500);
+        serial_active = true;
+      }
+
       pmsg = (const char*)action.arg0;
       dv->_Serial->println(pmsg);
       break;

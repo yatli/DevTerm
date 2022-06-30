@@ -28,6 +28,13 @@ enum class PowerSaveMode : uint8_t {
   Max,
 };
 
+enum class JSMouseOverlay : uint8_t {
+  None,
+  Layer1,
+  Layer2,
+  Max
+};
+
 enum class SelectorMode : uint8_t {
   Joystick,
   Gear,
@@ -154,17 +161,20 @@ class State
     bool middleClick;
     bool scrolled;
     Timeout<uint16_t, MIDDLE_CLICK_TIMEOUT_MS> middleClickTimeout;
-    int currentGear;
     DEVTERM* dv;
     SelectorMode selectorMode;
     JoystickMode joystickMode;
     PowerSaveMode powerSaveMode;
+    JSMouseOverlay jsmouseOverlay;
     bool js_keys[JS_KEY_MAX];
+    bool js_mouse_slow;
     int jm_tick;
     int sleep_tick;
+    bool usb_inactive_mouse;
     bool usb_active;
     bool usb_resuming;
-    int usb_resume_tick;
+    bool serial_active;
+    int usb_resume_loops;
     std::queue<UsbAction> pending_actions;
 };
 

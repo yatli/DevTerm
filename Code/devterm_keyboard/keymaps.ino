@@ -203,13 +203,13 @@ void keyboard_action(DEVTERM*dv,uint8_t row,uint8_t col,uint8_t mode) {
       JOY_ACTIONS(
           /*k*/ {k = ' '; KBD_ACTION(k); },
           /*m*/dv->state->joystickMouseFeed(JS_KEY_SEL, mode),
-          /*j*/dv->state->queueUSB(UsbAction::JoystickKey(9, mode)));
+          /*j*/dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_SEL, mode)));
       break;
     case _START_KEY:
       JOY_ACTIONS(
           /*k*/{ k = KEY_RETURN; KBD_ACTION(k); }, 
           /*m*/dv->state->joystickMouseFeed(JS_KEY_STA, mode), 
-          /*j*/dv->state->queueUSB(UsbAction::JoystickKey(10, mode)));
+          /*j*/dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_STA, mode)));
     break;
     
     case _FN_BRIGHTNESS_UP:
@@ -309,25 +309,25 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('j'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_A, mode),
-          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(2, mode)));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_A, mode)));
     break;
     case _JOYSTICK_B:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('k'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_B, mode),
-          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(3, mode)));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_B, mode)));
     break;
     case _JOYSTICK_X:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('u'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_X, mode),
-          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(1, mode)));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_X, mode)));
     break;
     case _JOYSTICK_Y:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('i'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_Y, mode),
-          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(4, mode)));
+          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_Y, mode)));
     break;
     case _MOUSE_LEFT:
       MOUSE_ACTION(MOUSE_LEFT);

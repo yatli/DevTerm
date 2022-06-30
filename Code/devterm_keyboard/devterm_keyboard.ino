@@ -27,6 +27,9 @@ uint8_t check_pd2(){ // if swtich 2 in back is set to on(HIGH)
 }
 
 void setup() {
+  pinMode(PD2,INPUT);// switch 2 in back 
+  pinMode(PC13, OUTPUT); // PC13 is the LED
+  debug_led(false);
 
   USBComposite.setManufacturerString("ClockworkPI");
   USBComposite.setProductString("DevTerm");
@@ -50,25 +53,22 @@ void setup() {
   
   HID.begin(*dev_term._Serial,reportDescription, sizeof(reportDescription));
 
-  while(!USBComposite);//wait until usb port been plugged in to PC
+  delay(1000);
+
+  while(!USBComposite) {
+    //wait until usb port been plugged in to PC
+    delay(10);
+  }
+  // debug_led(true);
 
   keyboard_init(&dev_term);
   keys_init(&dev_term);
   trackball_init(&dev_term);
-  
-  dev_term._Serial->println("setup done");
 
-  pinMode(PD2,INPUT);// switch 2 in back 
-  pinMode(PC13, OUTPUT); // PC13 is the LED
-  debug_led(false);
   if (check_pd2() == HIGH) {
     // backward compat
     dev_term.state->setJoystickMode(JoystickMode::Keyboard);
   }
-  
-  delay(1000);
-  // note, don't initialize low-power mode before delay(1000) -- it is that one gives you a chance to re-program the device
-  low_power_init(&dev_term);
 }
 
 void loop() {

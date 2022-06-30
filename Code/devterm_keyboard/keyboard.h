@@ -55,4 +55,28 @@ inline void debug_led(bool on) {
     digitalWrite(PC13, !on);
 }
 
+// Joystick button mapping
+enum JS_BUTTON {
+    JS_BUTTON_X   = 1,
+    JS_BUTTON_Y   = 4,
+    JS_BUTTON_A   = 2,
+    JS_BUTTON_B   = 3,
+    JS_BUTTON_SEL = 9,
+    JS_BUTTON_STA = 10,
+
+    // special mouse overlays
+    JS_BUTTON_JML1 = 23,
+    JS_BUTTON_JML2 = 24,
+
+    JS_BUTTON_JML1_B = 25,
+    JS_BUTTON_JML1_A = 26,
+    JS_BUTTON_JML1_Y = 27,
+    JS_BUTTON_JML1_X = 28,
+
+    JS_BUTTON_JML2_B = 29,
+    JS_BUTTON_JML2_A = 30,
+    JS_BUTTON_JML2_Y = 31,
+    JS_BUTTON_JML2_X = 32,
+};
+
 #endif
