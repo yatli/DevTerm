@@ -9,6 +9,7 @@ import devterm_gearbox
 gear_dir = '/var/lib/devterm'
 gear_file = gear_dir + '/gear'
 gear = 3
+gear_max = len(devterm_gearbox.gears)
 
 def notify_send(s):
     system(f'/usr/local/bin/root-notify-send "{s}"')
@@ -23,7 +24,7 @@ def handle_gear(line):
         elif action == "down":
             gear = gear - 1
         gear = max(gear, 1)
-        gear = min(gear, 6)
+        gear = min(gear, gear_max)
         devterm_gearbox.devterm.set_gear(gear)
         notify_send(f'Gear = {gear}')
         devterm_gearbox.echo(gear, gear_file)

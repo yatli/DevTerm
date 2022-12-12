@@ -37,20 +37,20 @@ def L1X(val):
         send_key(ecodes.KEY_LEFTCTRL, ecodes.KEY_X)
 
 # Layer 2: Window manipulation
-def L2B(val): # Maximize
+def L2Y(val): # Fullscreen
     if val:
         send_key(ecodes.KEY_LEFTALT, ecodes.KEY_F11)
-def L2Y(val): # Move window
+def L2B(val): # Move window
     if val:
         send_key(ecodes.KEY_LEFTALT, ecodes.KEY_SPACE)
         sleep(0.2)
         send_key(None, ecodes.KEY_M)
-def L2X(val): # Resize window
+def L2A(val): # Resize window
     if val:
         send_key(ecodes.KEY_LEFTALT, ecodes.KEY_SPACE)
         sleep(0.2)
         send_key(None, ecodes.KEY_R)
-def L2A(val): # Close window
+def L2X(val): # Close window
     if val:
         send_key(ecodes.KEY_LEFTALT, ecodes.KEY_F4)
 
