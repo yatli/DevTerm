@@ -86,7 +86,7 @@ bool trackball_task(DEVTERM*dv) {
       x = rX.value;
       y = rY.value;
       if (rX.stopped) {
-        glider[AXIS_Y].stop();
+        glider[AXIS_X].stop();
       }
       if (rY.stopped) {
         glider[AXIS_Y].stop();

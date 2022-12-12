@@ -159,7 +159,7 @@ void dt_kbd_restore_layer(DEVTERM*dv) {
     break;                                    \
   }
 
-#define FN_JOY_ACTION(x, y)                            \
+#define FN_JOY_XY_ACTION(x, y)                            \
   if (dv->Keyboard_state.fn_on && mode == KEY_PRESSED) \
   {                                                    \
     dv->state->fnJoystick(x, y);                       \
@@ -278,28 +278,28 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
     break;
     
     case _JOYSTICK_UP:
-      FN_JOY_ACTION(0, -1);
+      FN_JOY_XY_ACTION(0, -1);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_UP_ARROW),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_UP, mode),
           /*j*/ dv->state->joystickJoyFeed(JS_KEY_UP, mode));
       break;
     case _JOYSTICK_DOWN:
-      FN_JOY_ACTION(0, 1);
+      FN_JOY_XY_ACTION(0, 1);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_DOWN_ARROW),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_DOWN, mode),
           /*j*/ dv->state->joystickJoyFeed(JS_KEY_DOWN, mode));
       break;
     case _JOYSTICK_LEFT:
-      FN_JOY_ACTION(-1, 0);
+      FN_JOY_XY_ACTION(-1, 0);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_LEFT_ARROW),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_LEFT, mode),
           /*j*/ dv->state->joystickJoyFeed(JS_KEY_LEFT, mode));
       break;
     case _JOYSTICK_RIGHT:
-      FN_JOY_ACTION(1, 0);
+      FN_JOY_XY_ACTION(1, 0);
       JOY_ACTIONS(
           /*k*/ KBD_ACTION(KEY_RIGHT_ARROW),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_RIGHT, mode),
@@ -321,8 +321,15 @@ void keypad_action(DEVTERM*dv,uint8_t col,uint8_t mode) {
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('u'),
           /*m*/ dv->state->joystickMouseFeed(JS_KEY_X, mode),
-          /*j*/ dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_X, mode)));
-    break;
+          /*j*/ if (dv->Keyboard_state.fn_on) {
+              dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_L1, mode));
+              dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_R1, mode));
+              dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_STA, mode));
+              dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_SEL, mode));
+          } else {
+            dv->state->queueUSB(UsbAction::JoystickKey(JS_BUTTON_X, mode));
+          });
+      break;
     case _JOYSTICK_Y:
       JOY_ACTIONS(
           /*k*/ KBD_ACTION('i'),

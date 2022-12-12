@@ -61,6 +61,12 @@ enum JS_BUTTON {
     JS_BUTTON_Y   = 4,
     JS_BUTTON_A   = 2,
     JS_BUTTON_B   = 3,
+
+    JS_BUTTON_L1   = 5,
+    JS_BUTTON_R1   = 6,
+    JS_BUTTON_L2   = 7,
+    JS_BUTTON_R2   = 8,
+
     JS_BUTTON_SEL = 9,
     JS_BUTTON_STA = 10,
 

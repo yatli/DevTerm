@@ -18,7 +18,7 @@ State::State(DEVTERM* dt)
     scrolled(false),
     joystickMode(JoystickMode::Mouse),
     selectorMode(SelectorMode::Joystick),
-    powerSaveMode(PowerSaveMode::On),
+    powerSaveMode(PowerSaveMode::Off),
     jsmouseOverlay(JSMouseOverlay::None),
     js_mouse_slow(false),
     jm_tick(0),
