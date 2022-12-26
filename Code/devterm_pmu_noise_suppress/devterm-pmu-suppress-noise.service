@@ -1,0 +1,9 @@
+[Unit]
+Description=devterm a06 noise reduction
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/devterm_pmu_noise_suppress
+
+[Install]
+WantedBy=multi-user.target
