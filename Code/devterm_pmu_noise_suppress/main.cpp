@@ -14,7 +14,7 @@ constexpr auto load_strength = 1000 * 3200;
 constexpr auto sleep_on_batt = std::chrono::milliseconds(15000);
 constexpr auto sleep_on_ac = std::chrono::milliseconds(50);
 constexpr auto ac_state_path = "/sys/class/power_supply/axp22x-ac/online";
-constexpr auto bat_state_path = "/sys/class/power_supply/axp20x-battery/status";
+constexpr auto bat_cap_path = "/sys/class/power_supply/axp20x-battery/capacity";
 constexpr auto cpu_stat_path = "/proc/stat";
 
 const std::string cat(const char* path) {
@@ -54,7 +54,7 @@ int main() {
   while(true) {
     auto suppress_enable = 
       cat(ac_state_path) == "1\n"
-      && cat(bat_state_path) != "Charging\n";
+      && cat(bat_cap_path) == "100\n";
     auto sleep_time = suppress_enable 
       ? sleep_on_ac
       : sleep_on_batt;
