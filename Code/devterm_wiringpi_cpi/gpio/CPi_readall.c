@@ -83,7 +83,7 @@ static char *alts [] =
 
 static char* get_pin_name(int pin)
 {
-	static char name[10];
+	static char name[32];
 	char c;
 	int b, d;
 
