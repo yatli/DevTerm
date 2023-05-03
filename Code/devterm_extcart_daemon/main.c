@@ -31,14 +31,14 @@
 #define SPI_CS 40
 #define SPI_MISO 41
 
-#define GPIO_Y1 (MCP23008_PINBASE+0)
-#define GPIO_Y2 (MCP23008_PINBASE+1)
-#define GPIO_Y3 (MCP23008_PINBASE+2)
-#define GPIO_Y4 (MCP23008_PINBASE+3)
-#define GPIO_Y5 (MCP23008_PINBASE+4)
-#define GPIO_Y6 (MCP23008_PINBASE+5)
-#define GPIO_Y7 (MCP23008_PINBASE+6)
-#define GPIO_Y8 (MCP23008_PINBASE+7)
+#define GPIO_Y0 (MCP23008_PINBASE+0)
+#define GPIO_Y1 (MCP23008_PINBASE+1)
+#define GPIO_Y2 (MCP23008_PINBASE+2)
+#define GPIO_Y3 (MCP23008_PINBASE+3)
+#define GPIO_Y4 (MCP23008_PINBASE+4)
+#define GPIO_Y5 (MCP23008_PINBASE+5)
+#define GPIO_Y6 (MCP23008_PINBASE+6)
+#define GPIO_Y7 (MCP23008_PINBASE+7)
 
 
 void die(const char* msg, ...) {
@@ -64,6 +64,7 @@ void resetPins() {
   pinMode(SPI_SCL, INPUT);
   pinMode(SPI_CS, INPUT);
   pinMode(SPI_MISO, INPUT);
+  pinMode(GPIO_Y0, INPUT);
   pinMode(GPIO_Y1, INPUT);
   pinMode(GPIO_Y2, INPUT);
   pinMode(GPIO_Y3, INPUT);
@@ -71,7 +72,6 @@ void resetPins() {
   pinMode(GPIO_Y5, INPUT);
   pinMode(GPIO_Y6, INPUT);
   pinMode(GPIO_Y7, INPUT);
-  pinMode(GPIO_Y8, INPUT);
 }
 
 void setup() {
